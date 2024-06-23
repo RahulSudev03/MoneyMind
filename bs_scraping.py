@@ -71,24 +71,6 @@ def extract_text_with_line_breaks_from_url(url):
 
 def summarize(text):
     """uses openAI to get dictionary of stocks to related sentences"""
-    def extractJson(text):
-        #Extract the json part from an openAI assistant's output
-        pattern = r'```json\s*(.*?)\s*```'
-        match = re.search(pattern, text, re.DOTALL)
-        try:
-            if match:
-                # Extract and return the substring
-                text = match.group(1).strip()
-                text = re.sub(r'【.*?】', '', text)
-                text = text.replace("```json", "").replace("```","")
-                text = json.loads(text)
-                return text
-            else:
-                # Return the same text if no json is found
-                return json.loads(text)
-        except Exception as e:
-            return text
-    
     load_dotenv()
 
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -111,7 +93,6 @@ def summarize(text):
             run_id=run.id
         )
         text = messages.data[0].content[0].text.value
-        #text = extractJson(text)
         text = re.sub(r'【.*?】', '', text) # Remove unwanted stuff from the text
 
         # Delete the assistant and the thread after use

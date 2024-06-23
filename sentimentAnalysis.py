@@ -4,6 +4,7 @@ import bs_scraping as bss
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+import transfer_to_db as ttdb
 
 # get general stock info (separate from portfolio information)
 def setupGeneral():
@@ -26,7 +27,7 @@ def makePrediction(info):
                 sum = summary(ticker, score, sentences)
                 predictions.append({"name":ticker, "advice":sum})
                 tickers.append(ticker)
-                print(f"{ticker} : {score}, {sum}")
+                print(f"{ticker} : {score}, {sum}\n")
     return predictions
 
 def summary(ticker, score, sentences):
@@ -114,20 +115,15 @@ def overallPosOrNeg(emotions):
         score += weight[ind] * emotions[ind]["score"]
     return score
 
-"""
-job_id = createJob()
-while jobStatusCheck(job_id) == "IN_PROGRESS":
-    pass
-print(jobStatusCheck(job_id))
-print(getHighests(job_id))
-"""
 
-print("----------->reading from the internet...")
-stockSentences = setupGeneral()
-print("\n----------->read news...")
-print(stockSentences)
-print("\n----------->making predictions...")
-predictions = makePrediction(stockSentences)
-print("\n----------->predictions done....")
-#print(predictions)
+##### CALL THIS FUNCTION TO MAKE GENERAL PREDICTIONS #####
+def generalStockPredictions():
+    print("----------->reading from the internet...")
+    stockSentences = setupGeneral()
+    print("\n----------->read news...")
+    print(stockSentences)
+    print("\n----------->making predictions...")
+    predictions = makePrediction(stockSentences)
+    print("\n----------->predictions done....")
 
+    ttdb.truncate_and_populate_table(predictions)

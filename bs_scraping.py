@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 
 def scrape_yahoo_finance_news():
+    """goes through yahoo's finance website and takes articles that are flagged to be related to stocks/trading"""
     url = "https://finance.yahoo.com/topic/stock-market-news/"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -32,6 +33,7 @@ def scrape_yahoo_finance_news():
         return []
 
 def filter_news(news):
+    """filters to figure out which articles are related to stocks"""
     stock_keywords = ['stock', 'share', 'market', 'NASDAQ', 'NYSE', 'S&P', 'Dow', 'equity', 'ticker', 'IPO', 'dividend', 'invest']
     filtered = []
 
@@ -42,15 +44,14 @@ def filter_news(news):
     return filtered
 
 def fix_url(url):
-    # Ensure the urls are in proper format
-    
+    """Ensure the urls are in proper format"""
     url = url.strip("/")
     if not url.startswith("https://"):
         url = "https://" + url
     return url
 
 def extract_text_with_line_breaks_from_url(url):
-    # Retrieve all the text contents of the html of a page as a string
+    """Retrieve all the text contents of the html of a page as a string"""
 
     # Ensure it is in the proper format
     url = fix_url(url)
@@ -69,20 +70,39 @@ def extract_text_with_line_breaks_from_url(url):
     return text_with_line_breaks
 
 def summarize(text):
+    """uses openAI to get dictionary of stocks to related sentences"""
+    def extractJson(text):
+        #Extract the json part from an openAI assistant's output
+        pattern = r'```json\s*(.*?)\s*```'
+        match = re.search(pattern, text, re.DOTALL)
+        try:
+            if match:
+                # Extract and return the substring
+                text = match.group(1).strip()
+                text = re.sub(r'【.*?】', '', text)
+                text = text.replace("```json", "").replace("```","")
+                text = json.loads(text)
+                return text
+            else:
+                # Return the same text if no json is found
+                return json.loads(text)
+        except Exception as e:
+            return text
+    
     load_dotenv()
 
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     my_assistant = client.beta.assistants.create(
         instructions="You are a news article parser.",
         name="testing",
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
     )
     thread = client.beta.threads.create()
     run = client.beta.threads.runs.create_and_poll(
         thread_id=thread.id,
         assistant_id=my_assistant.id,
-        model="gpt-3.5-turbo",
-        instructions="Give me a python dictionary where the keys are stock tickers and the values are lists of sentences from the article which are related to that stock (don't modify the sentences): "+ text
+        model="gpt-4o",
+        instructions="Give me a python dictionary where the keys are stock tickers and the values are lists of sentences from the article which are related to that stock (don't modify the sentences). Make sure that only the sentences relating to the stock are included in the values. Keep the output in JSON format, so use only double quotes not single quotes. When doing double quotes, make sure to use \" whenever necessary: "+ text
         )
     #print(run)
     if run.status == "completed":
@@ -91,12 +111,31 @@ def summarize(text):
             run_id=run.id
         )
         text = messages.data[0].content[0].text.value
+        #text = extractJson(text)
         text = re.sub(r'【.*?】', '', text) # Remove unwanted stuff from the text
 
         # Delete the assistant and the thread after use
         client.beta.assistants.delete(assistant_id=my_assistant.id)
         client.beta.threads.delete(thread_id=thread.id)
         return text
+
+def main():
+    """main function which combies all helper functions to get all the information from yahoo finance"""
+    news = scrape_yahoo_finance_news()
+    stock_news = filter_news(news)
+    allInfo = []
+    for idx, article in enumerate(stock_news):
+        try:
+            text = extract_text_with_line_breaks_from_url(article['link'])
+            text = summarize(text)
+            text = text[text.find("{"):text.rfind("}")+1]
+            #print(text)
+            allInfo.append(text)
+        except:
+            pass
+    return allInfo
+
+
 
 
 if __name__ == "__main__":
@@ -106,7 +145,12 @@ if __name__ == "__main__":
     print("Stock-related news articles:")
     for idx, article in enumerate(stock_news):
         print(f"{idx+1}. {article['title']}\n   {article['link']}")
+        try:
+            text = extract_text_with_line_breaks_from_url(article['link'])
+            text = summarize(text)
+            text = text[text.find("{"):text.rfind("}")+1]
+            print(text)
+        except:
+            pass
 
-        text = extract_text_with_line_breaks_from_url(article['link'])
-        print(summarize(text))
 

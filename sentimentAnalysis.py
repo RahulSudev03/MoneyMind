@@ -127,3 +127,5 @@ def generalStockPredictions():
     print("\n----------->predictions done....")
 
     ttdb.truncate_and_populate_table(predictions)
+
+generalStockPredictions()

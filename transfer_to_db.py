@@ -29,7 +29,7 @@ def truncate_and_populate_table(data):
         dynamodb.delete_item(
             TableName=table_name,
             Key={
-                'ticker': {"S":item['ticker']}
+                'ticker': {"S":item['ticker']["S"]}
             }
         )
 

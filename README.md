@@ -1,5 +1,5 @@
 # MoneyMind
-We focused on making a project that uses artificial intelligence to provide customized recommendations to individuals to improve the strength of their financial portfolio overall.
+We focused on making a project that uses artificial intelligence to provide customized recommendations to individuals to improve the strength of their financial portfolio.
 
 ## Inspiration
 We were inspired by our passion for money and teaching others about the value of financial independence so that they can best route themselves for success in the long run.

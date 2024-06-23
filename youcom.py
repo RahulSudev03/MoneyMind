@@ -1,12 +1,12 @@
-import json
-import boto3
 import os, re
 from os import getenv
 from dotenv import load_dotenv
-load_dotenv()
 import bs_scraping as bss
+import sentimentAnalysis as sent
 from openai import OpenAI
 import requests
+import ast
+load_dotenv()
 
 def get_news_links(company_names):
     headers = {"X-API-Key": getenv("YOUCOM_API_KEY")}
@@ -55,19 +55,26 @@ def summarizePort(ticker, text):
     
 
 #input --> {ticker: [list of urls]}
+###### RUN THIS FUNCTION TO MAKE PORTFOLIO PREDICTIONS ######
 def portfolioStockPredictions(portfolio):
+    allStocks = []
     for ticker, urls in portfolio.items():
         # for each ticker, create a large paragraph 
-        totalInfo = []
+        info = []
         for url in urls:
             text = bss.extract_text_with_line_breaks_from_url(url)
             text = summarizePort(ticker, text)
+            print(text)
             text = text[text.find("["):text.rfind("]")+1]
-            print(type(text))
-            totalInfo += [json.loads(item) for item in text]
-        print(totalInfo)
+            info += ast.literal_eval(text)
+        allStocks.append({ticker:info})
 
-temp = {"AAPL":["https://finance.yahoo.com/news/best-stock-buy-now-apple-101500161.html", "https://finance.yahoo.com/news/hedge-funds-crazy-apple-inc-212411753.html"]}
+    predictions = sent.makePrediction(allStocks)
+    
+
+"""
+temp = {"AAPL":["https://finance.yahoo.com/news/best-stock-buy-now-apple-101500161.html", "https://finance.yahoo.com/news/hedge-funds-crazy-apple-inc-212411753.html"],
+        "DUOL":["https://finance.yahoo.com/news/too-buy-duolingo-stock-142100630.html"]}
 portfolioStockPredictions(temp)
-
+"""
 

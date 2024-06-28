@@ -32,6 +32,3 @@ We hope to add more API implementations that can better predict the direction th
 - Replit
 - Visual Studio
 - You.com's News API
-
-## Try it out
-[Visit our site!](https://finance-advisor.b12sites.com/)
